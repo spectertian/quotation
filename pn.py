@@ -104,7 +104,7 @@ def save_dxf(dots, filename):
 
 # 主程序
 def main():
-    image_path = 'input_image.png'  # 请替换为您的输入图像路径
+    image_path = '1.png'  # 请替换为您的输入图像路径
     min_diameter = 0.1  # 最小圆直径（毫米）
     density_factor = 1.0  # 密度因子，增加会使圆点更稀疏
 
