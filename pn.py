@@ -31,6 +31,54 @@ def image_to_dots(image_path, min_diameter=0.1, density_factor=1.0):
 
     print(f"图像处理完成，共生成 {len(dots)} 个圆点")
     return dots, width, height
+
+
+def save_eps_optimized(dots, width, height, filename):
+    print(f"正在保存 EPS 文件: {filename}")
+
+    # EPS 文件头
+    eps_header = f"""%!PS-Adobe-3.0 EPSF-3.0
+%%BoundingBox: 0 0 {width} {height}
+%%Pages: 1
+%%DocumentData: Clean7Bit
+%%LanguageLevel: 2
+%%EndComments
+%%BeginProlog
+/cp {{newpath 0 360 arc closepath fill}} bind def
+%%EndProlog
+%%Page: 1 1
+"""
+
+    # EPS 文件尾
+    eps_footer = "%%EOF\n"
+
+    total_dots = len(dots)
+    batch_size = 10000
+    num_batches = total_dots // batch_size + (1 if total_dots % batch_size != 0 else 0)
+
+    with open(filename, 'w') as eps_file:
+        eps_file.write(eps_header)
+
+        with tqdm(total=total_dots + 100, desc="绘制圆点") as pbar:
+            for i in range(num_batches):
+                start = i * batch_size
+                end = min((i + 1) * batch_size, total_dots)
+                batch = dots[start:end]
+
+                for x, y, d in batch:
+                    eps_file.write(f"{x} {height - y} {d / 2} cp\n")
+                    pbar.update(1)
+
+                eps_file.flush()
+
+            pbar.set_description("完成文件")
+            for _ in range(100):
+                time.sleep(0.01)
+                pbar.update(1)
+
+        eps_file.write(eps_footer)
+
+    print(f"EPS 文件保存完成: {filename}")
 def save_eps(dots, width, height, filename):
     print(f"正在保存 EPS 文件: {filename}")
     plt.figure(figsize=(width / 100, height / 100), dpi=100)
@@ -183,10 +231,12 @@ def main():
 
     dots, width, height = image_to_dots(image_path, min_diameter, density_factor)
 
-    save_eps(dots, width, height, 'output.eps')
-    save_plt(dots, width, height, 'output.plt')
-    save_svg(dots, width, height, 'output.svg')
-    save_dxf(dots, 'output.dxf')
+    # save_eps(dots, width, height, 'output.eps')
+    # save_eps_optimized(dots, width, height, 'output_optimized.eps')
+
+    # save_plt(dots, width, height, 'output.plt')
+    # save_svg(dots, width, height, 'output.svg')
+    # save_dxf(dots, 'output.dxf')
     save_ai(dots, width, height, 'output.pdf')  # AI 格式实际上保存为 PDF
 
 
