@@ -5,11 +5,6 @@ import time
 import svgwrite
 import ezdxf
 import math
-import os
-import tempfile
-
-import matplotlib.pyplot as plt
-
 
 def image_to_dots(image_path, min_diameter=0.1, density_factor=1.0, scale_factor=0.5):
     img = Image.open(image_path).convert('L')
@@ -28,13 +23,12 @@ def image_to_dots(image_path, min_diameter=0.1, density_factor=1.0, scale_factor
     for y in range(0, height, dot_size):
         for x in range(0, width, dot_size):
             if x + dot_size <= width and y + dot_size <= height:
-                avg_gray = np.mean(img_array[y:y + dot_size, x:x + dot_size])
+                avg_gray = np.mean(img_array[y:y+dot_size, x:x+dot_size])
                 dot_diameter = (255 - avg_gray) / 255 * dot_size
                 if dot_diameter > 0:
-                    dots.append((x + dot_size / 2, y + dot_size / 2, dot_diameter))
+                    dots.append((x + dot_size/2, y + dot_size/2, dot_diameter))
 
     return dots, width, height
-
 
 def save_eps_optimized(dots, width, height, filename):
     print(f"正在保存 EPS 文件: {filename}")
@@ -57,13 +51,12 @@ def save_eps_optimized(dots, width, height, filename):
 
         with tqdm(total=len(dots), desc="绘制圆点") as pbar:
             for x, y, d in dots:
-                eps_file.write(f"{x} {height - y} {d / 2} cp\n")
+                eps_file.write(f"{x} {height - y} {d/2} cp\n")
                 pbar.update(1)
 
         eps_file.write(eps_footer)
 
     print(f"EPS 文件保存完成: {filename}")
-
 
 def save_plt(dots, width, height, filename):
     print(f"正在保存 PLT 文件: {filename}")
@@ -84,17 +77,15 @@ def save_plt(dots, width, height, filename):
         plt_file.write("SP0;\nIN;\n")
     print(f"PLT 文件保存完成: {filename}")
 
-
 def save_svg(dots, width, height, filename):
     print(f"正在保存 SVG 文件: {filename}")
     dwg = svgwrite.Drawing(filename, size=(width, height))
     with tqdm(total=len(dots), desc="绘制圆点") as pbar:
         for x, y, d in dots:
-            dwg.add(dwg.circle(center=(x, y), r=d / 2, fill='black'))
+            dwg.add(dwg.circle(center=(x, y), r=d/2, fill='black'))
             pbar.update(1)
     dwg.save()
     print(f"SVG 文件保存完成: {filename}")
-
 
 def save_dxf(dots, filename):
     print(f"正在保存 DXF 文件: {filename}")
@@ -102,48 +93,14 @@ def save_dxf(dots, filename):
     msp = doc.modelspace()
     with tqdm(total=len(dots), desc="绘制圆点") as pbar:
         for x, y, d in dots:
-            msp.add_circle((x, y), d / 2)
+            msp.add_circle((x, y), d/2)
             pbar.update(1)
     doc.saveas(filename)
     print(f"DXF 文件保存完成: {filename}")
 
-def save_ai(dots, width, height, filename):
-    print(f"正在保存 AI 文件 (PDF 格式): {filename}")
-    plt.figure(figsize=(width / 100, height / 100), dpi=300)
-    with tqdm(total=len(dots) + 100, desc="绘制圆点") as pbar:
-        for x, y, d in dots:
-            circle = plt.Circle((x, height - y), d / 2, fill=True, color='black')
-            plt.gca().add_artist(circle)
-            pbar.update(1)
-        plt.axis('off')
-        plt.gca().set_aspect('equal', adjustable='box')
-
-        pbar.set_description("准备保存")
-        for _ in range(50):
-            time.sleep(0.01)
-            pbar.update(1)
-
-        # 使用临时文件来保存 PDF
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            temp_filename = temp_file.name
-
-        plt.savefig(temp_filename, format='pdf', bbox_inches='tight', pad_inches=0)
-
-        pbar.set_description("写入文件")
-        file_size = os.path.getsize(temp_filename)
-        with open(temp_filename, 'rb') as temp_file, open(filename, 'wb') as output_file:
-            for chunk in iter(lambda: temp_file.read(4096), b''):
-                output_file.write(chunk)
-                pbar.update(50 * len(chunk) / file_size)
-
-        os.unlink(temp_filename)  # 删除临时文件
-
-    plt.close()
-    print(f"AI 文件 (PDF 格式) 保存完成: {filename}")
-
 # 主函数
 def main():
-    image_path = '1.png'  # 请替换为您的输入图像路径
+    image_path = 'input_image.png'  # 请替换为您的输入图像路径
     min_diameter = 0.1  # 最小圆直径（毫米）
     density_factor = 1.0  # 密度因子，增加会使圆点更稀疏
     scale_factor = 0.5  # 缩放因子，减小这个值会使输出文件更小
@@ -154,9 +111,6 @@ def main():
     save_plt(dots, width, height, 'output_small.plt')
     save_svg(dots, width, height, 'output_small.svg')
     save_dxf(dots, 'output_small.dxf')
-    save_ai(dots, width, height, 'output.pdf')  # AI 格式实际上保存为 PDF
-
-
 
 if __name__ == "__main__":
     main()
