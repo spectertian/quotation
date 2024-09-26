@@ -1,3 +1,5 @@
+import sys
+
 from PIL import Image
 import svgwrite
 import ezdxf
@@ -17,15 +19,22 @@ def image_to_dots(image_path, min_diameter=0.1, density_factor=2.0, threshold=20
                   samples_per_pixel=4):
     print("正在读取和处理图像...")
     img = Image.open(image_path).convert('RGB')
+    # img = Image.open(image_path).convert('l')
+    # img = Image.open(image_path).convert('l')
+    # print(img.size)
+    # sys.exit()
 
     # 计算缩放比例
-    # scale_factor = target_width / img.width
-    # new_width = target_width
-    # new_height = int(img.height * scale_factor)
-    # img = img.resize((new_width, new_height), Image.LANCZOS)
+    scale_factor = target_width / img.width
+    new_width = target_width
+    new_height = int(img.height * scale_factor)
+    img = img.resize((new_width, new_height), Image.LANCZOS)
 
     img_array = np.array(img)
     height, width, _ = img_array.shape
+    # print(height)
+    # print(width)
+    # sys.exit()
 
     base_dot_size = max(0.5, int(min_diameter * 3.779528 * density_factor))
     dots = []
@@ -40,8 +49,8 @@ def image_to_dots(image_path, min_diameter=0.1, density_factor=2.0, threshold=20
                 # 计算颜色的亮度
                 brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
-                if brightness * 255 >= threshold:
-                    continue  # 跳过很亮的区域
+                # if brightness * 255 >= threshold:
+                #     continue  # 跳过很亮的区域
 
                 # 计算颜色的饱和度
                 max_color = max(r, g, b)
@@ -107,9 +116,8 @@ def save_eps(dots, width, height, filename):
         gc.collect()
 
 
-def save_plt(dots, width, height, filename):
+def save_plt(dots, width, height, filename, dpi=300):
     print(f"正在准备保存 PLT 文件: {filename}")
-
     total_dots = len(dots)
     batch_size = 10000  # 每批处理的圆点数
     num_batches = total_dots // batch_size + (1 if total_dots % batch_size != 0 else 0)
@@ -235,18 +243,20 @@ def save_png(dots, width, height, filename):
 
 
 # 使用示例
-image_path = '3.png'
+image_path = '3.bmp'
 min_diameter = 0.1  # 减小最小圆直径（毫米）
-density_factor = 3.0  # 增加密度因子
+density_factor = 10  # 增加密度因子
 threshold = 200  # 稍微提高亮度阈值
-target_width = 300  # 目标宽度
+target_width = 160  # 目标宽度
 samples_per_pixel = 4  # 每个像素的采样次数
 
 print("开始处理图像...")
 dots, width, height = image_to_dots(image_path, min_diameter, density_factor, threshold, target_width, samples_per_pixel)
-# save_eps(dots, width, height, 'output.eps')
-# save_plt(dots, width, height, 'output.plt')
-# save_svg(dots, width, height, 'output.svg')
-# save_dxf(dots, 'output.dxf')
+print(width, height)
+# sys.exit()
+save_eps(dots, width, height, 'output.eps')
+save_plt(dots, width, height, 'output.plt')
+save_svg(dots, width, height, 'output.svg')
+save_dxf(dots, 'output.dxf')
 save_png(dots, width, height, 'output.png')
 print("所有文件处理完成！")
